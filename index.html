@@ -1,43 +1,198 @@
+
 <!DOCTYPE html>
 <html>
 <head>
   <meta charset="utf-8">
   <title>CRX Download URL Generator</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    body {
+      background: linear-gradient(120deg, #e2e7ef 0%, #eaf6fb 100%);
+      font-family: 'Roboto', Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      min-height: 100vh;
+    }
+    .container {
+      max-width: 400px;
+      margin: 48px auto;
+      background: #fff;
+      box-shadow: 0 6px 36px #a6b8e933;
+      border-radius: 18px;
+      padding: 32px 26px 26px 26px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    h1 {
+      color: #1869ad;
+      font-weight: 700;
+      margin-bottom: 16px;
+      text-align: center;
+      font-size: 1.7em;
+      letter-spacing: 0.02em;
+    }
+    label {
+      font-weight: 500;
+      color: #3171c4;
+      margin-bottom: 7px;
+      display: block;
+    }
+    input, select {
+      width: 100%;
+      padding: 8px 12px;
+      margin-bottom: 16px;
+      font-size: 1em;
+      border: 1px solid #b8c3d1;
+      border-radius: 7px;
+      background: #fafdff;
+      transition: border-color 0.18s;
+      outline: none;
+    }
+    input:focus, select:focus {
+      border-color: #44a3ee;
+      background: #f2f9ff;
+    }
+    button {
+      background: linear-gradient(104deg, #44a3ee 60%, #2266c2 130%);
+      color: #fff;
+      font-weight: 700;
+      font-size: 1em;
+      border: none;
+      border-radius: 9px;
+      padding: 12px 0;
+      cursor: pointer;
+      width: 100%;
+      margin-top: 4px;
+      box-shadow: 0 2px 12px #2283ee33;
+      transition: background 0.16s;
+    }
+    button:hover {
+      background: linear-gradient(104deg, #2283ee 60%, #134b7b 130%);
+    }
+    #result {
+      margin-top: 24px;
+      font-size: 1em;
+      background: #f2f7fa;
+      border-radius: 10px;
+      padding: 18px 12px;
+      box-shadow: 0 2px 10px #b6d1ee1a;
+      color: #1a4060;
+      word-break: break-all;
+      overflow-wrap: anywhere;
+    }
+    .field-group {
+      width: 100%;
+      margin-bottom: 6px;
+      display: flex;
+      flex-direction: column;
+    }
+    small {
+      color: #2c537c;
+      font-size: 0.93em;
+      margin-top: 8px;
+      display: block;
+    }
+    @media (max-width: 500px) {
+      .container {
+        padding: 16px 6px;
+        max-width: 97vw;
+      }
+    }
+  </style>
 </head>
 <body>
-  <h1>CRX Direct Link Generator</h1>
-  <form id="form">
-    Extension ID: <input id="xid" pattern="[a-p]{32}" required><br>
-    Chrome Version: <input id="prodversion" value="119.0.0.0" required><br>
-    OS: 
-    <select id="os">
-      <option value="win">Windows</option>
-      <option value="mac">Mac</option>
-      <option value="linux">Linux</option>
-      <option value="cros">ChromeOS</option>
-    </select><br>
-    Architecture: 
-    <select id="arch">
-      <option value="x86-64">x86-64</option>
-      <option value="arm">ARM</option>
-    </select><br>
-    <button type="submit">Generate URL</button>
-  </form>
-  <div id="result"></div>
+  <div class="container">
+    <h1>CRX Direct Link Generator</h1>
+    <form id="form" autocomplete="off">
+      <div class="field-group">
+        <label for="xid">Extension ID</label>
+        <input id="xid" pattern="[a-p]{32}" required maxlength="32" placeholder="32 lowercase letters a-p">
+      </div>
+      <div class="field-group">
+        <label for="prodversion">Chrome Version</label>
+        <input id="prodversion" value="119.0.0.0" required placeholder="e.g. 119.0.0.0">
+      </div>
+      <div class="field-group">
+        <label for="os">OS</label>
+        <select id="os">
+          <option value="win">Windows</option>
+          <option value="mac">Mac</option>
+          <option value="linux">Linux</option>
+          <option value="cros">ChromeOS</option>
+        </select>
+      </div>
+      <div class="field-group">
+        <label for="arch">Architecture</label>
+        <select id="arch">
+          <option value="x86-64">x86-64</option>
+          <option value="arm">ARM</option>
+        </select>
+      </div>
+      <button type="submit">Generate URL</button>
+    </form>
+    <div id="result"></div>
+  </div>
   <script>
+    // Attempt to autofill using Chrome Extension API if available
+    (async function autofillWithChromeAPI() {
+      if (window.chrome && chrome.runtime) {
+        if (chrome.runtime.getPlatformInfo) {
+          chrome.runtime.getPlatformInfo(function(info) {
+            const osMap = { 'mac': 'mac', 'win': 'win', 'linux': 'linux', 'cros': 'cros' };
+            if (osMap[info.os]) document.getElementById('os').value = osMap[info.os];
+            if (info.arch === "x86-64" || info.arch === "arm") {
+              document.getElementById('arch').value = info.arch;
+            }
+          });
+        }
+        // Chrome version from userAgent
+        let chromeVersion = '';
+        if (navigator.userAgent) {
+          let match = navigator.userAgent.match(/Chrome\/([0-9.]+)/);
+          if (match && match[1]) {
+            chromeVersion = match[1];
+            document.getElementById('prodversion').value = chromeVersion;
+          }
+        }
+      } else {
+        // Not an extension page: fallback to userAgent parsing
+        let os = navigator.userAgent;
+        if(/Win/.test(os)) document.getElementById('os').value = 'win';
+        else if(/Mac/.test(os)) document.getElementById('os').value = 'mac';
+        else if(/Linux/.test(os)) document.getElementById('os').value = 'linux';
+        else if(/CrOS/.test(os)) document.getElementById('os').value = 'cros';
+        if (/arm/.test(os)) document.getElementById('arch').value = 'arm';
+        let match = os.match(/Chrome\/([0-9.]+)/);
+        if (match && match[1]) {
+          document.getElementById('prodversion').value = match[1];
+        }
+      }
+    })();
+
     function getCwsOption(key) {
       return {
         os: document.getElementById("os").value,
         arch: document.getElementById("arch").value,
-        os_arch: document.getElementById("arch").value, 
-        nacl_arch: document.getElementById("arch").value,
+        os_arch: document.getElementById("arch").value, // same as arch
+        nacl_arch: document.getElementById("arch").value, // same as arch
         prodversion: document.getElementById("prodversion").value,
         xid: document.getElementById("xid").value
       }[key];
     }
+
     document.getElementById('form').onsubmit = e => {
       e.preventDefault();
-
+      const result = document.getElementById("result");
+      result.innerHTML = "";
+      // Validation feedback for Extension ID
+      const xid = getCwsOption('xid');
+      if (!xid.match(/^[a-p]{32}$/)) {
+        result.innerHTML = `<small style="color:#cb2d20;font-weight:500;">Extension ID must be 32 lowercase letters from a to p.</small>`;
+        document.getElementById("xid").focus();
+        return;
+      }
       var url = 'https://clients2.google.com/service/update2/crx?response=redirect';
       url += '&os=' + getCwsOption('os');
       url += '&arch=' + getCwsOption('arch');
@@ -50,11 +205,10 @@
       url += '&x=id%3D' + getCwsOption('xid');
       url += '%26uc';
 
-      document.getElementById("result").innerHTML = `
-        <p>CRX Download URL:</p>
-        <a href="${url}" target="_blank">${url}</a>
-        <br><br>
-        <small>This link may not work directly in Chrome due to security restrictions. Try with curl, wget, or a third-party downloader.</small>`;
+      result.innerHTML = `
+        <p><strong>CRX Download URL:</strong></p>
+        <a href="${url}" target="_blank" style="color:#2283ee;word-break:break-all;">${url}</a>
+      `;
     };
   </script>
 </body>
