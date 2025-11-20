@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html>
 <head>
@@ -132,7 +131,7 @@
       </div>
       <button type="submit">Generate URL</button>
     </form>
-    <div id="result"></div>
+    <div id="result" style="display: none;"></div>
   </div>
   <script>
     // Attempt to autofill using Chrome Extension API if available
@@ -185,6 +184,8 @@
     document.getElementById('form').onsubmit = e => {
       e.preventDefault();
       const result = document.getElementById("result");
+      document.getElementById("result").style.display = "block";
+
       result.innerHTML = "";
       // Validation feedback for Extension ID
       const xid = getCwsOption('xid');
